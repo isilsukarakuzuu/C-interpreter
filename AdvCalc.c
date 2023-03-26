@@ -152,9 +152,19 @@ int is_it_a_equation(char *input)
   }
   if (count == 1)
   {
+    if (length == 0)
+    {
+      error = true;
+      return -1;
+    }
     return length;
   }
-  return -1;
+  if (count > 1)
+  {
+    error = true;
+    return -1;
+  }
+  return 0;
 }
 
 int are_parantheses_placed_correctly(char *input)
@@ -208,7 +218,6 @@ int function_parser(char *input)
     {
       if (strcmp(function, reserved_functions[k]))
         continue;
-      printf("function: %s\n", function);
 
       // it replaces the function name chars with space from actual string
       for (int l = j; l < i; l++)
@@ -243,7 +252,6 @@ int function_parser(char *input)
       } while (level != 0);
       if (comma_count > 1 || comma_index == -1)
       {
-        printf("error: invalid function call\n");
         error = true;
         continue;
       }
@@ -253,6 +261,7 @@ int function_parser(char *input)
   }
 }
 
+// TODO: it must check if the variables in input has no reserved word variables and you must assign variables to their values and do the calculations
 long long int expression_value_finder(char *input, int length)
 {
   if (length == 0)
@@ -273,13 +282,8 @@ long long int expression_value_finder(char *input, int length)
       error = true;
     }
   }
-  // print the input
-  for (int i = 0; i < length; i++)
-  {
-    // printf("%c", input[i]);
-  }
-  // printf("\n");
-  return 5;
+
+  return 0;
 }
 
 long long int expression_parser(char *input, int length)
@@ -333,9 +337,6 @@ long long int expression_parser(char *input, int length)
   free(sub_expr);
   return temp;
 }
-// TODO: it must assign the functions to the reserved operators
-// TODO: it must check if the input has valid parentheses ( and ) must be equal and must be in the correct places
-// TODO: it must check if the input has no reserved word variables
 
 int main()
 {
@@ -349,6 +350,25 @@ int main()
     }
 
     input[strcspn(input, "\n")] = '\0';
+    // check whether input is new line
+    if (input[0] == '\0')
+    {
+      continue;
+    }
+
+    int space_check = 0;
+    // check whether input consist only spaces
+    for (int i = 0; i < strlen(input); i++)
+    {
+      if (input[i] == ' ')
+      {
+        space_check++;
+      }
+    }
+    if (space_check == strlen(input))
+    {
+      continue;
+    }
 
     // checks if the input contains only valid characters
     if (!contains_valid_chars(input))
@@ -377,10 +397,17 @@ int main()
       continue;
     }
 
-    // checks if the input is a equation
-    if (is_it_a_equation(input) != -1)
+    int length = is_it_a_equation(input);
+    if (error)
     {
-      int length = is_it_a_equation(input);
+      printf("Error!\n");
+      error = false;
+      continue;
+    }
+
+    // checks if the input is a equation
+    if (length >= 1)
+    {
       // checks the left side of the equal sign, it must be a variable
       if (!variable_checker(input, length))
       {
@@ -407,14 +434,15 @@ int main()
 
     function_parser(input);
     space_deleter(input);
-    for (int q = 0; input[q] != '\0'; q++)
-    {
-      printf("%c", input[q]);
-    }
-    printf("\n");
+
     // TODO: it must calculate the expression and print the result
     long long int result = expression_parser(input, strlen(input));
 
+    for (int i = 0; i < strlen(input); i++)
+    {
+      printf("%c", input[i]);
+    }
+    printf("\n");
     if (error)
     {
       printf("Error!\n");
