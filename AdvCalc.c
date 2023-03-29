@@ -4,11 +4,55 @@
 #include <string.h>
 #include <ctype.h>
 #include "variables.h"
+
+bool debug = true;
 bool error = false;
 const char *operators = "+-*&|";
 char *reserved_functions[] = {"xor", "not", "ls", "rs", "lr", "rr"};
-// xor --> ^, not --> ~, ls --> <, rs --> >, lr --> [, rr --> ]
+// xor --> ^, ls --> <, rs --> >, lr --> [, rr --> ]
 const char *new_operators = "^~<>[]";
+int temp_count = 1000;
+
+// TODO: check if the memory is allocated correctly and freed correctly
+// TODO: check tab and other versions of space
+// TODO: check the inconsistency of the output
+// TODO: check piazza for more test cases
+
+void debug_printer(char *error_message)
+{
+  if (debug)
+  {
+    printf("error:%s\n", error_message);
+  }
+}
+
+void array_printer(char *array, int length)
+{
+  if (debug)
+  {
+    for (int i = 0; i < length; i++)
+    {
+      printf("%c ", array[i]);
+    }
+    printf("\n");
+  }
+}
+
+int index_finder(char *input, int length, char *operator_array)
+{
+  // returns the index of the first operator in the operator array
+  for (int i = 0; i < length; i++)
+  {
+    for (int j = 0; operator_array[j] != '\0'; j++)
+    {
+      if (input[i] == operator_array[j])
+      {
+        return i;
+      }
+    }
+  }
+  return -1;
+}
 
 int contains_valid_chars(char *input)
 {
@@ -36,7 +80,7 @@ int contains_valid_chars(char *input)
       continue;
     }
     // check if the character is in given another set of valid characters
-    char *valid_chars = "()%,+*-&|=";
+    char *valid_chars = "(),+*-&|=";
     if (strchr(valid_chars, input[i]) != NULL)
     {
       continue;
@@ -53,7 +97,11 @@ int is_it_a_comment(char *input)
   {
     if (input[i] == '%')
     {
-      input[i] = '\0';
+      while (input[i] != '\0')
+      {
+        input[i] = ' ';
+        i++;
+      }
       return 1;
     }
   }
@@ -72,11 +120,11 @@ int are_spaces_placed_correctly(char *input)
       {
         continue;
       }
-      while (input[i] == ' ')
+      while (input[i] == ' ' && input[i] != '\0')
       {
         i++;
       }
-      if (!(isalpha(input[i]) || isdigit(input[i])))
+      if (!(isalpha(input[i]) || isdigit(input[i]) || input[i] == '_'))
       {
         continue;
       }
@@ -112,6 +160,11 @@ int variable_checker(char *input, int length)
     return 0;
   }
 
+  if (input[0] == '_')
+  {
+    return 1;
+  }
+
   // checks if the input has only uppercase and lowercase letters
   for (int i = 0; i < length; i++)
   {
@@ -129,12 +182,58 @@ int variable_checker(char *input, int length)
   // checks if the input is not exactly one of the reserved words
   for (int i = 0; i < 6; i++)
   {
-    if (!strncmp(input, reserved_functions[i], length))
+    char *var = (char *)malloc(sizeof(char) * length);
+    // copy input to var
+    for (int j = 0; j < length; j++)
     {
+      var[j] = input[j];
+    }
+
+    if (!strcmp(var, reserved_functions[i]))
+    {
+      free(var);
       return 0;
     }
+    free(var);
   }
   return 1;
+}
+
+long long int value_checker(char *input, int length)
+{
+  // checks if the input is not empty
+  if (length == 0)
+  {
+    return -1;
+  }
+
+  // checks if the input has only digits
+  for (int i = 0; i < length; i++)
+  {
+    if (input[i] >= '0' && input[i] <= '9')
+    {
+      continue;
+    }
+    return -1;
+  }
+
+  // checks if the input is not too long
+  if (length > 19)
+  {
+    return -1;
+  }
+
+  // checks if the input is not too big
+  long long int value = 0;
+  for (int i = 0; i < length; i++)
+  {
+    value = value * 10 + (input[i] - '0');
+  }
+  if (value > 9223372036854775807ll)
+  {
+    return -1;
+  }
+  return value;
 }
 
 int is_it_a_equation(char *input)
@@ -154,6 +253,7 @@ int is_it_a_equation(char *input)
   {
     if (length == 0)
     {
+      debug_printer("No variable name before the equal sign.");
       error = true;
       return -1;
     }
@@ -161,6 +261,7 @@ int is_it_a_equation(char *input)
   }
   if (count > 1)
   {
+    debug_printer("More than one equal sign.");
     error = true;
     return -1;
   }
@@ -252,25 +353,31 @@ int function_parser(char *input)
       } while (level != 0);
       if (comma_count > 1 || comma_index == -1)
       {
+        debug_printer("Invalid number of commas.");
         error = true;
         continue;
       }
       // it replaces the comma with assigned new function operator
       input[comma_index] = new_operators[k];
     }
+    free(function);
   }
 }
 
-// TODO: it must check if the variables in input has no reserved word variables and you must assign variables to their values and do the calculations
 long long int expression_value_finder(char *input, int length)
 {
+  // debug_printer("expression_value_finder called.");
+  // array_printer(input, length);
   if (length == 0)
   {
+    debug_printer("Empty input in exp value finder.");
     error = true;
+    return 0;
   }
   // check whether the input's first or last char is an operator
   if (strchr(operators, input[0]) != NULL || strchr(operators, input[length - 1]) != NULL)
   {
+    debug_printer("Input starts or ends with an operator.");
     error = true;
   }
 
@@ -279,15 +386,104 @@ long long int expression_value_finder(char *input, int length)
   {
     if (strchr(operators, input[i]) != NULL && strchr(operators, input[i + 1]) != NULL)
     {
+      debug_printer("Two operators next to each other.");
       error = true;
     }
   }
+  int index = -1;
+  // new operators
+  index = index_finder(input, length, "^~<>[]");
 
+  if (index != -1)
+  {
+    // xor --> ^, not --> ~, ls --> <, rs --> >, lr --> [, rr --> ]
+    if (input[index] == '^')
+    {
+      return expression_value_finder(input, index) ^ expression_value_finder(input + index + 1, length - index - 1);
+    }
+    if (input[index] == '<')
+    {
+      return expression_value_finder(input, index) << expression_value_finder(input + index + 1, length - index - 1);
+    }
+    if (input[index] == '>')
+    {
+      return expression_value_finder(input, index) >> expression_value_finder(input + index + 1, length - index - 1);
+    }
+    if (input[index] == '[')
+    {
+      // Returns the result of a rotated i times to the left.
+      long long int a = expression_value_finder(input, index);
+      return (a << expression_value_finder(input + index + 1, length - index - 1)) | (a >> (64 - expression_value_finder(input + index + 1, length - index - 1)));
+    }
+    if (input[index] == ']')
+    {
+      // Returns the result of a rotated i times to the right.
+      long long int a = expression_value_finder(input, index);
+      return (a >> expression_value_finder(input + index + 1, length - index - 1)) | (a << (64 - expression_value_finder(input + index + 1, length - index - 1)));
+    }
+  }
+
+  // | operator
+  index = index_finder(input, length, "|");
+
+  if (index != -1)
+  {
+    return expression_value_finder(input, index) | expression_value_finder(input + index + 1, length - index - 1);
+  }
+  // & operator
+  index = index_finder(input, length, "&");
+
+  if (index != -1)
+  {
+    return expression_value_finder(input, index) & expression_value_finder(input + index + 1, length - index - 1);
+  }
+
+  // +-* operators
+  index = index_finder(input, length, "+-");
+
+  if (index != -1)
+  {
+    if (input[index] == '+')
+    {
+      return expression_value_finder(input, index) + expression_value_finder(input + index + 1, length - index - 1);
+    }
+    else
+    {
+      return expression_value_finder(input, index) - expression_value_finder(input + index + 1, length - index - 1);
+    }
+  }
+
+  index = index_finder(input, length, "*");
+
+  if (index != -1)
+  {
+    return expression_value_finder(input, index) * expression_value_finder(input + index + 1, length - index - 1);
+  }
+
+  if (input[0] == '!')
+  {
+    return ~expression_value_finder(input + 1, length - 1);
+  }
+
+  long long int value = value_checker(input, length);
+  if (value != -1)
+  {
+    return value;
+  }
+
+  if (variable_checker(input, length))
+  {
+    return variable_value(input, length);
+  }
+  debug_printer("Invalid exp value finder.");
+  error = true;
   return 0;
 }
 
 long long int expression_parser(char *input, int length)
 {
+  // debug_printer("expression_parser called.");
+  // array_printer(input, length);
   char *sub_expr = (char *)malloc(6 * length * sizeof(char));
   int k = 0;
   int level = 0;
@@ -311,14 +507,16 @@ long long int expression_parser(char *input, int length)
       }
 
       long long int expression = expression_parser(input + i + 1, (j - 1) - (i + 1) + 1);
-      sprintf(sub_expr + k, " %lld ", expression);
+      // change temp_count to a string and set it as a variable
+
+      char *temp = (char *)malloc(5 * sizeof(char));
+      sprintf(temp, "_%d", temp_count);
+      temp_count++;
+
+      set_variable(temp, expression);
+      sprintf(sub_expr + k, " %s ", temp);
       // increase k by the number of digits in the expression + 2
-      while (expression != 0)
-      {
-        expression /= 10;
-        k++;
-      }
-      k += 2;
+      k += strlen(temp) + 2;
       i = j;
     }
     else
@@ -330,10 +528,14 @@ long long int expression_parser(char *input, int length)
   sub_expr[k] = '\0';
   if (!are_spaces_placed_correctly(sub_expr))
   {
+    debug_printer("spaces are not placed correctly");
     error = 1;
   }
   space_deleter(sub_expr);
   long long int temp = expression_value_finder(sub_expr, strlen(sub_expr));
+  // printf("input: %s\n", sub_expr);
+  // printf("temp: %lld\n", temp);
+
   free(sub_expr);
   return temp;
 }
@@ -370,19 +572,22 @@ int main()
       continue;
     }
 
+    // checks if the input is a comment
+    is_it_a_comment(input);
+
     // checks if the input contains only valid characters
     if (!contains_valid_chars(input))
     {
+      debug_printer("contains invalid chars");
       printf("Error!\n");
       continue;
     }
 
-    // checks if the input is a comment
-    is_it_a_comment(input);
-
     // checks if the spaces are placed correctly
     if (!are_spaces_placed_correctly(input))
     {
+      debug_printer("spaces are not placed correctly");
+      array_printer(input, strlen(input));
       printf("Error!\n");
       continue;
     }
@@ -393,6 +598,7 @@ int main()
     // checks the parantheses briefly
     if (!are_parantheses_placed_correctly(input))
     {
+      debug_printer("parantheses are not placed correctly");
       printf("Error!\n");
       continue;
     }
@@ -411,11 +617,13 @@ int main()
       // checks the left side of the equal sign, it must be a variable
       if (!variable_checker(input, length))
       {
+        debug_printer("left side of the equal sign is not a variable");
         printf("Error!\n");
         continue;
       }
       function_parser(input);
-      // space_deleter(input);
+      space_deleter(input);
+
       //  TODO: it must calculate the expression on the right side of the equal sign and assign it to the variable on the left side of the equal sign
       long long int result = expression_parser(input + length + 1, strlen(input) - length - 1);
       if (error)
@@ -424,11 +632,10 @@ int main()
         error = false;
         continue;
       }
-      printf("%d result\n", result);
-      char *variable = malloc(length);
-      strncpy(variable, input, length - 1);
-      variable[length - 1] = '\0';
-      set_variable(input, result);
+      char *variable = malloc(length + 1);
+      strncpy(variable, input, length);
+      variable[length] = '\0';
+      set_variable(variable, result);
       continue;
     }
 
@@ -438,18 +645,13 @@ int main()
     // TODO: it must calculate the expression and print the result
     long long int result = expression_parser(input, strlen(input));
 
-    for (int i = 0; i < strlen(input); i++)
-    {
-      printf("%c", input[i]);
-    }
-    printf("\n");
     if (error)
     {
       printf("Error!\n");
       error = false;
       continue;
     }
-    printf("%d result\n", result);
+    printf("%lld\n", result);
   }
 
   // free the variables

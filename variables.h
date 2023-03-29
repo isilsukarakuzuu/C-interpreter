@@ -2,11 +2,12 @@
 
 #include <stdlib.h>
 #include <string.h>
+#include <stdio.h>
 
 struct variable
 {
   char *name;
-  int value;
+  long long int value;
 };
 
 struct variable *variables[256];
@@ -16,6 +17,7 @@ int variable_value(char *name, int length)
 {
   for (int i = 0; i < variable_count; i++)
   {
+
     if (strncmp(variables[i]->name, name, length) == 0)
     {
       return variables[i]->value;
@@ -24,7 +26,7 @@ int variable_value(char *name, int length)
   return 0;
 }
 
-void set_variable(char *name, int value)
+void set_variable(char *name, long long int value)
 {
   for (int i = 0; i < variable_count; i++)
   {
@@ -35,7 +37,7 @@ void set_variable(char *name, int value)
       return;
     }
   }
-  variables[variable_count] = (struct variable*)malloc(sizeof(struct variable));
+  variables[variable_count] = (struct variable *)malloc(sizeof(struct variable));
   variables[variable_count]->name = name;
   variables[variable_count]->value = value;
   variable_count++;
