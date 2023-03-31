@@ -13,9 +13,10 @@ char *reserved_functions[] = {"xor", "not", "ls", "rs", "lr", "rr"};
 const char *new_operators = "^~<>[]";
 int temp_count = 10000;
 
-// TODO: check if the memory is allocated correctly and freed correctly
-// TODO: check piazza for more test cases
-// TODO: run in linux
+// TODO: check if the memory leak
+// TODO: unary xor, not
+// TODO: ending CTRL D , \n
+
 
 void debug_printer(char *error_message)
 {
@@ -367,8 +368,6 @@ void function_parser(char *input)
 
 long long int expression_value_finder(char *input, int length)
 {
-  // debug_printer("expression_value_finder called.");
-  // array_printer(input, length);
   if (length == 0)
   {
     debug_printer("Empty input in exp value finder.");
@@ -477,9 +476,7 @@ long long int expression_value_finder(char *input, int length)
     return variable_value(input, length);
   }
   debug_printer("Invalid exp value finder.");
-  printf("Invalid expression: ");
   array_printer(input, length);
-  printf("%d", temp_count);
   error = true;
   return 0;
 }
@@ -539,8 +536,6 @@ long long int expression_parser(char *input, int length)
   }
   space_deleter(sub_expr);
   long long int temp = expression_value_finder(sub_expr, strlen(sub_expr));
-  // printf("input: %s\n", sub_expr);
-  // printf("temp: %lld\n", temp);
 
   free(sub_expr);
   return temp;
@@ -548,10 +543,11 @@ long long int expression_parser(char *input, int length)
 
 int main()
 {
-  char input[257];
+  char input[258];
   while (true)
-  {
+  {  
     printf("> ");
+
     if (fgets(input, sizeof(input), stdin) == NULL)
     {
       break;
@@ -563,6 +559,9 @@ int main()
     {
       continue;
     }
+
+    // checks if the input is a comment
+    is_it_a_comment(input);
 
     size_t space_check = 0;
     // check whether input consist only spaces
@@ -578,8 +577,7 @@ int main()
       continue;
     }
 
-    // checks if the input is a comment
-    is_it_a_comment(input);
+    
 
     // checks if the input contains only valid characters
     if (!contains_valid_chars(input))
@@ -630,7 +628,6 @@ int main()
       function_parser(input);
       space_deleter(input);
 
-      //  TODO: it must calculate the expression on the right side of the equal sign and assign it to the variable on the left side of the equal sign
       long long int result = expression_parser(input + length + 1, strlen(input) - length - 1);
       if (error)
       {
@@ -648,7 +645,6 @@ int main()
     function_parser(input);
     space_deleter(input);
 
-    // TODO: it must calculate the expression and print the result
     long long int result = expression_parser(input, strlen(input));
 
     if (error)

@@ -13,7 +13,7 @@ struct variable
 struct variable *variables[256];
 int variable_count = 0;
 
-int variable_value(char *name, int length)
+long long int variable_value(char *name, int length)
 {
   for (int i = 0; i < variable_count; i++)
   {
