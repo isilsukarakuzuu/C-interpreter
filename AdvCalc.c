@@ -5,18 +5,17 @@
 #include <ctype.h>
 #include "variables.h"
 
-bool debug = true;
+bool debug = false;
 bool error = false;
 const char *operators = "+-*&|";
 char *reserved_functions[] = {"xor", "not", "ls", "rs", "lr", "rr"};
 // xor --> ^, ls --> <, rs --> >, lr --> [, rr --> ]
 const char *new_operators = "^~<>[]";
-int temp_count = 1000;
+int temp_count = 10000;
 
 // TODO: check if the memory is allocated correctly and freed correctly
-// TODO: check tab and other versions of space
-// TODO: check the inconsistency of the output
 // TODO: check piazza for more test cases
+// TODO: run in linux
 
 void debug_printer(char *error_message)
 {
@@ -75,7 +74,7 @@ int contains_valid_chars(char *input)
       continue;
     }
     // check if the character is a space
-    if (input[i] == ' ')
+    if (input[i] == ' ' || input[i] == '\t')
     {
       continue;
     }
@@ -113,14 +112,14 @@ int are_spaces_placed_correctly(char *input)
   // checks if the input has spaces in the correct places
   for (int i = 1; input[i] != '\0'; i++)
   {
-    if (input[i] == ' ')
+    if (input[i] == ' ' || input[i] == '\t')
     {
 
       if (!(isalpha(input[i - 1]) || isdigit(input[i - 1])))
       {
         continue;
       }
-      while (input[i] == ' ' && input[i] != '\0')
+      while ((input[i] == ' ' || input[i] == '\t') && input[i] != '\0')
       {
         i++;
       }
@@ -141,7 +140,7 @@ int space_deleter(char *input)
   int j = 0;
   while (input[i] != '\0')
   {
-    if (input[i] != ' ')
+    if (input[i] != ' ' && input[i] != '\t')
     {
       input[j] = input[i];
       j++;
@@ -182,7 +181,9 @@ int variable_checker(char *input, int length)
   // checks if the input is not exactly one of the reserved words
   for (int i = 0; i < 6; i++)
   {
-    char *var = (char *)malloc(sizeof(char) * length);
+    char *var = (char *)malloc(sizeof(char) * (length + 1));
+    var[length] = '\0';
+
     // copy input to var
     for (int j = 0; j < length; j++)
     {
@@ -476,6 +477,9 @@ long long int expression_value_finder(char *input, int length)
     return variable_value(input, length);
   }
   debug_printer("Invalid exp value finder.");
+  printf("Invalid expression: ");
+  array_printer(input, length);
+  printf("%d", temp_count);
   error = true;
   return 0;
 }
@@ -509,12 +513,14 @@ long long int expression_parser(char *input, int length)
       long long int expression = expression_parser(input + i + 1, (j - 1) - (i + 1) + 1);
       // change temp_count to a string and set it as a variable
 
-      char *temp = (char *)malloc(5 * sizeof(char));
+      char *temp = (char *)malloc(7 * sizeof(char));
+      temp[6] = '\0';
       sprintf(temp, "_%d", temp_count);
       temp_count++;
 
       set_variable(temp, expression);
       sprintf(sub_expr + k, " %s ", temp);
+
       // increase k by the number of digits in the expression + 2
       k += strlen(temp) + 2;
       i = j;
@@ -562,7 +568,7 @@ int main()
     // check whether input consist only spaces
     for (int i = 0; i < strlen(input); i++)
     {
-      if (input[i] == ' ')
+      if (input[i] == ' ' || input[i] == '\t' || input[i] == '\n')
       {
         space_check++;
       }

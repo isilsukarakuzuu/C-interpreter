@@ -47,6 +47,7 @@ void free_variables()
 {
   for (int i = 0; i < variable_count; i++)
   {
+    free(variables[i]->name);
     free(variables[i]);
   }
 }
