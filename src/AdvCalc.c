@@ -295,7 +295,7 @@ int are_parantheses_placed_correctly(char *input)
   return 0;
 }
 
-int function_parser(char *input)
+void function_parser(char *input)
 {
   for (int i = 0; input[i] != '\0'; i++)
   {
@@ -564,9 +564,9 @@ int main()
       continue;
     }
 
-    int space_check = 0;
+    size_t space_check = 0;
     // check whether input consist only spaces
-    for (int i = 0; i < strlen(input); i++)
+    for (size_t i = 0; i < strlen(input); i++)
     {
       if (input[i] == ' ' || input[i] == '\t' || input[i] == '\n')
       {
