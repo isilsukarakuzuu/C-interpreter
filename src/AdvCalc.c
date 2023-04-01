@@ -13,11 +13,6 @@ char *reserved_functions[] = {"xor", "not", "ls", "rs", "lr", "rr"};
 const char *new_operators = "^~<>[]";
 int temp_count = 10000;
 
-// TODO: check if the memory leak
-// TODO: unary xor, not
-// TODO: ending CTRL D , \n
-
-
 void debug_printer(char *error_message)
 {
   if (debug)
@@ -545,7 +540,7 @@ int main()
 {
   char input[258];
   while (true)
-  {  
+  {
     printf("> ");
 
     if (fgets(input, sizeof(input), stdin) == NULL)
@@ -576,8 +571,6 @@ int main()
     {
       continue;
     }
-
-    
 
     // checks if the input contains only valid characters
     if (!contains_valid_chars(input))
